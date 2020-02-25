@@ -4,6 +4,8 @@
 */
 #include "Keyboard.h"
 #include "timint.h"
+#include "programs.h"
+#include "gui.h"
 
 #include <SPI.h>
 #include <Wire.h>
@@ -13,7 +15,9 @@
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, 4);
-#define SZ1WIDTH 21
+
+//button B shud be pushed for at least 500ms
+#define DEBOUNCE_MIN 5
 
 //PINS
 const int bA = 7; //button A
@@ -24,6 +28,8 @@ const int lA = 5;  //LED A
 
 //VOLATILES
 volatile int LSTATE = 0;   // for checking the state of a pushButton
+volatile int PSELST = 0;
+volatile unsigned int debc = 0;
 volatile unsigned int ictr = 0;
 volatile int i,j;
 
@@ -60,24 +66,41 @@ void setup() {
 
 void loop() {
 
-	display.clearDisplay();
-	display.setCursor(0,0);
-	display.println(F("KeyboardNinja v1.0"));
-	display.setTextColor(SSD1306_BLACK,SSD1306_WHITE);
-	for(i=0;i<SZ1WIDTH;i++){
-		display.write('=');
-	}
-	display.display(); //update display
+	initgui( &display );
+	//default cursor at prog0
+	display.setCursor(0,PROG_VSTART);
+	display.write('>');
+	display.display();
 
 	while(true){
 	//main loop
+		while( digitalRead( bB ) == HIGH ){}
+		debc = 0;
+		while( digitalRead( bB ) == LOW ){
+			debc++;
+			delay(1);
+		}
+		if(debc < DEBOUNCE_MIN){
+			//probably noice, we expect press more than 500ms
+			continue;
+		}
+		//bB button pressed and released, debounced
+		PSELST++;
+		if(PSELST > 4) PSELST = 0;
+		display.clearDisplay();
+		initgui( &display );
+		display.setCursor(0,PROG_VSTART+TXTHEIGHT*PSELST);
+		display.write('>');
+		display.display();
 
 	}
 }
 
 void handleApush(){
-	Keyboard.print("Hello World!");
-	//digitalWrite( lA, LOW);
+	//Keyboard.print("Hello World!");
+	digitalWrite( lA, LOW); //DEBUG TEST
+	seq[PSELST]->launch();
+	digitalWrite( lA, HIGH); //DEBUG TEST
 }
 
 ISR(TIMER1_COMPA_vect){
