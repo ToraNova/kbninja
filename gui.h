@@ -27,6 +27,4 @@ void initgui(Adafruit_SSD1306 *display){
 		//display->println(F(seq[i]->title));
 		display->println(seq[i]->title);
 	}
-
-	display->display(); //update display
 }

@@ -18,13 +18,14 @@ namespace notepad{
 	Keyboard.press('r');
 	delay(100);
 	Keyboard.releaseAll();
-	delay(1500);
+	delay(1000);
 
 	//Keyboard.print("notepad.exe");
 	//delay(100);
 	//Keyboard.write(KEY_RETURN);
-	Keyboard.println("notepad.exe");
-	delay(1000);
+	Keyboard.print("notepad.exe");
+	delay(100);
+	Keyboard.write(KEY_RETURN);
 
 	//Keyboard.print("Made by: ToraNova (chia_jason96@live.com)");
 

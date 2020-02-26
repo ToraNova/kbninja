@@ -7,6 +7,30 @@
  * This is a one-file library (func defined in a header)
  * because arduino doesn't know how to link cpp files
  * and i dun want to put it under the /lib dir
+ *
+ * PRESCALERS
+ * CS02 CS01 	CS00 	Desc
+ * 0	0	0	No clock
+ * 0	0	1	No prescaler
+ * 0	1	0	8 prescaler
+ * 0	1	1	64 prescaler
+ * 1	0	0	256 prescaler
+ * 1	0	1	1024 prescaler
+ * 1	1	0	ext clk t0 falling
+ * 1	1	1	ext clk t0 rising
+ *
+ * CS22	CS21 	CS20 	Desc
+ * 0	0	0	No clock
+ * 0	0	1	No prescaling
+ * 0	1	0	8
+ * 0	1	1	32
+ * 1	0	0	64
+ *
+ * (timer speed (Hz)) = (Arduino clock speed (16MHz)) / prescaler
+ * compare match register = [ 16,000,000Hz/ (prescaler * desired interrupt frequency) ] - 1
+ *
+ * i.e. 8Hz
+ * 16M / (8*1024) - 1
  */
 
 #ifdef OCR0A
@@ -36,7 +60,8 @@ void t0setup(){
 #ifdef OCR1A
 //setup timer1 (default 1Hz timeout)
 //mreg < 65536
-#define T1MREG 15624
+//#define T1MREG 15624 //1Hz
+#define T1MREG 1953 //roughly 8Hz
 void t1setup(){
 	cli(); //stop interrupts
 

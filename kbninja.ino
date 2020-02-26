@@ -3,7 +3,7 @@
 	A simple keyboard stroke injector with 2 button control
 */
 #include "Keyboard.h"
-#include "timint.h"
+//#include "timint.h"
 #include "programs.h"
 #include "gui.h"
 
@@ -33,16 +33,18 @@ volatile unsigned int debc = 0;
 volatile unsigned int ictr = 0;
 volatile int i,j;
 
+static unsigned long last_interrupt_time = 0;
+unsigned long interrupt_time;
+
 void setup() {
-	t1setup();
+	//t0setup();
+	//t1setup();
 
 	pinMode( bA, INPUT);
 	pinMode( bB, INPUT);
 	attachInterrupt( digitalPinToInterrupt(bA), handleApush, FALLING);
 	pinMode( LED_BUILTIN, OUTPUT);
 	pinMode( lA, OUTPUT);
-	// initialize control over the keyboard:
-	Keyboard.begin();
 
 	// init OLED
 	if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)){
@@ -74,7 +76,12 @@ void loop() {
 
 	while(true){
 	//main loop
-		while( digitalRead( bB ) == HIGH ){}
+		while( digitalRead( bB ) == HIGH ){
+			initgui( &display );
+			display.setCursor(0,PROG_VSTART+TXTHEIGHT*PSELST);
+			display.write('>');
+			display.display();
+		}
 		debc = 0;
 		while( digitalRead( bB ) == LOW ){
 			debc++;
@@ -84,27 +91,37 @@ void loop() {
 			//probably noice, we expect press more than 500ms
 			continue;
 		}
-		//bB button pressed and released, debounced
-		PSELST++;
-		if(PSELST > 4) PSELST = 0;
-		display.clearDisplay();
-		initgui( &display );
-		display.setCursor(0,PROG_VSTART+TXTHEIGHT*PSELST);
-		display.write('>');
-		display.display();
 
+		// initialize control over the keyboard:
+		Keyboard.begin();
+		delay(125);
+		//bB button pressed and released, debounced
+		digitalWrite( lA, LOW); //DEBUG TEST
+		seq[PSELST]->launch();
+		digitalWrite( lA, HIGH); //DEBUG TEST
+		Keyboard.end();
 	}
 }
 
 void handleApush(){
 	//Keyboard.print("Hello World!");
-	digitalWrite( lA, LOW); //DEBUG TEST
-	seq[PSELST]->launch();
-	digitalWrite( lA, HIGH); //DEBUG TEST
+	interrupt_time = millis();
+	// If interrupts come faster than 100ms, assume it's a bounce and ignore
+	//Expect it to still be LOW for some time
+	if (interrupt_time - last_interrupt_time > 100)
+	{
+		PSELST++;
+		if(PSELST > 4) PSELST = 0;
+	}
+	last_interrupt_time = interrupt_time;
 }
 
-ISR(TIMER1_COMPA_vect){
-	ictr++;
-	//LSTATE = !LSTATE;
-	//digitalWrite(LED_BUILTIN, LSTATE);
-}
+//ISR(TIMER0_COMPA_vect){
+//}
+//
+//ISR(TIMER1_COMPA_vect){
+//	//ictr++;
+//	//LSTATE = !LSTATE;
+//	//digitalWrite(lA, LSTATE);
+//	//this is working (8Hz)
+//}
